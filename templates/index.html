@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Medical Agent</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+    h1 { color: #1D9E75; }
+    input { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; }
+    button { margin-top: 10px; padding: 10px 24px; background: #1D9E75; color: white;
+             border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+    #result { margin-top: 24px; background: #f5f5f5; border-radius: 8px; padding: 16px; display: none; }
+    .label { font-weight: bold; color: #333; margin-top: 10px; }
+    .pill { display: inline-block; background: #e0f5ee; color: #0F6E56;
+            border-radius: 20px; padding: 4px 12px; margin: 4px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>Medical Recommendation Agent</h1>
+  <p>Describe your symptoms and get medicine and doctor suggestions.</p>
+  <input type="text" id="symptoms" placeholder="e.g. I have fever and headache..." />
+  <br>
+  <button onclick="getRecommendation()">Get Recommendation</button>
+  <div id="result">
+    <div class="label">Symptom detected:</div>
+    <div id="symptom"></div>
+    <div class="label">Suggested medicines:</div>
+    <div id="medicines"></div>
+    <div class="label">Advice:</div>
+    <div id="advice"></div>
+    <div class="label">See a doctor:</div>
+    <div id="doctors"></div>
+  </div>
+  <script>
+    async function getRecommendation() {
+      const symptoms = document.getElementById("symptoms").value;
+      const res = await fetch("/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symptoms })
+      });
+      const data = await res.json();
+      document.getElementById("symptom").innerText = data.symptom_detected || "-";
+      document.getElementById("advice").innerText = data.advice || "-";
+      document.getElementById("medicines").innerHTML =
+        (data.medicines || []).map(m => `<span class="pill">${m}</span>`).join("");
+      document.getElementById("doctors").innerHTML =
+        (data.doctors || []).map(d => `<span class="pill">${d}</span>`).join("");
+      document.getElementById("result").style.display = "block";
+    }
+  </script>
+</body>
+</html>
