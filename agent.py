@@ -1,32 +1,41 @@
 import requests
 import json
+import os
 from tools import TOOLS
+from dotenv import load_dotenv
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "llama3"
+load_dotenv()
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+MODEL = "llama3-8b-8192"
 
 SYSTEM_PROMPT = """You are a smart medical assistant agent.
 When a user describes a symptom or disease, extract the best matching keyword.
-Reply ONLY in valid JSON format (no extra text, no explanation):
+Reply ONLY in valid JSON format:
 {
   "tool": "recommend_medicine",
   "symptom": "fever"
 }
-Available tools: recommend_medicine, suggest_doctor
-Known symptom keywords: fever, headache, cough, cold, chest pain, stomach pain, 
-back pain, cancer, diabetes, blood pressure, asthma, thyroid, migraine, 
-skin rash, eye pain, tooth pain, anxiety, depression, kidney pain, joint pain
-If the symptom is not in the list, still return the closest matching keyword."""
+Known keywords: fever, headache, cough, cold, chest pain, stomach pain,
+back pain, cancer, diabetes, blood pressure, asthma, thyroid, migraine,
+skin rash, eye pain, tooth pain, anxiety, depression, kidney pain, joint pain"""
 
 def run_agent(user_input: str):
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
     payload = {
         "model": MODEL,
-        "prompt": SYSTEM_PROMPT + "\n\nUser says: " + user_input,
-        "stream": False
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_input}
+        ]
     }
     try:
-        res = requests.post(OLLAMA_URL, json=payload, timeout=60)
-        raw = res.json().get("response", "").strip()
+        res = requests.post(GROQ_URL, headers=headers, json=payload, timeout=30)
+        raw = res.json()["choices"][0]["message"]["content"].strip()
         start = raw.find("{")
         end = raw.rfind("}") + 1
         if start != -1 and end != 0:
